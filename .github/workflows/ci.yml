@@ -1,0 +1,66 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  schedule:
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: node scripts/check.mjs
+
+  selftest:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: node skills/setup/run.mjs selftest
+
+  # Informational: the CLI may need sign-in for some commands, so this job can't block a release.
+  validate:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm install -g @anthropic-ai/claude-code
+      - name: Validate the marketplace
+        run: claude plugin validate --strict .
+      - name: Validate the plugin on its own (a copy without marketplace.json)
+        run: |
+          mkdir -p "$RUNNER_TEMP/p"
+          git archive HEAD | tar -x -C "$RUNNER_TEMP/p"
+          rm "$RUNNER_TEMP/p/.claude-plugin/marketplace.json"
+          claude plugin validate --strict "$RUNNER_TEMP/p"
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [check, selftest]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - run: gh release create "$GITHUB_REF_NAME" PLAYBOOK.md --title "$GITHUB_REF_NAME" --generate-notes --verify-tag
+        env:
+          GH_TOKEN: ${{ github.token }}
