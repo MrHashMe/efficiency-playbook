@@ -53,6 +53,28 @@ jobs:
           rm "$RUNNER_TEMP/p/.claude-plugin/marketplace.json"
           claude plugin validate --strict "$RUNNER_TEMP/p"
 
+  # Informational, like validate: installs the plugin into a throwaway Codex home (no sign-in, no model call),
+  # then checks that the setup skill stays out of the model's prompt.
+  codex:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm install -g @openai/codex
+      - name: Install from this checkout and inspect the prompt
+        run: |
+          export CODEX_HOME="$RUNNER_TEMP/codex" HOME="$RUNNER_TEMP/home"
+          mkdir -p "$CODEX_HOME" "$HOME/w"
+          codex plugin marketplace add "$GITHUB_WORKSPACE" --json
+          codex plugin add efficiency-playbook@efficiency-playbook --json | tee add.json
+          node -e "const a=require('./add.json'),p=require('./.codex-plugin/plugin.json'),fs=require('fs');if(a.version!==p.version||!fs.existsSync(a.installedPath+'/codex-skills/setup/SKILL.md'))process.exit(1)"
+          cd "$HOME/w" && git init -q
+          codex debug prompt-input hello > prompt.json
+          if grep -q 'efficiency-playbook:setup' prompt.json; then echo 'setup skill is in the model prompt'; exit 1; fi
+
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [check, selftest]
@@ -61,6 +83,6 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v7
-      - run: gh release create "$GITHUB_REF_NAME" PLAYBOOK.md --title "$GITHUB_REF_NAME" --generate-notes --verify-tag
+      - run: gh release create "$GITHUB_REF_NAME" PLAYBOOK.md PLAYBOOK-CODEX.md --title "$GITHUB_REF_NAME" --generate-notes --verify-tag
         env:
           GH_TOKEN: ${{ github.token }}

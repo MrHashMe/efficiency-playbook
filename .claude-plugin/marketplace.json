@@ -1,7 +1,7 @@
 {
   "name": "efficiency-playbook",
   "owner": { "name": "MrHashMe", "url": "https://github.com/MrHashMe" },
-  "description": "Single-plugin marketplace for the Claude Code efficiency playbook (unofficial).",
+  "description": "Single-plugin marketplace for the Efficiency Playbook, for Claude Code and Codex (unofficial).",
   "plugins": [
     { "name": "efficiency-playbook", "source": "./" }
   ]

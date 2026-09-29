@@ -1,0 +1,26 @@
+{
+  "name": "efficiency-playbook",
+  "version": "7.4.0",
+  "description": "Installs, upgrades or rolls back an evidence-based, token-efficient Codex setup on Windows by running Part 1 of the bundled Codex playbook, asking before each change.",
+  "author": {
+    "name": "MrHashMe",
+    "url": "https://github.com/MrHashMe"
+  },
+  "homepage": "https://github.com/MrHashMe/efficiency-playbook#readme",
+  "repository": "https://github.com/MrHashMe/efficiency-playbook",
+  "license": "MIT",
+  "keywords": ["windows", "token-efficiency", "setup", "agents-md", "playbook"],
+  "skills": "./codex-skills/",
+  "interface": {
+    "displayName": "Efficiency Playbook",
+    "shortDescription": "Evidence-based, token-efficient Codex setup for Windows",
+    "longDescription": "Runs Part 1 of the bundled Codex playbook: short global working rules, a command map in the project's AGENTS.md, two explicit-only skills, and four opt-in config questions (Fast mode, auto-review, secrets in commands, Context7). It asks before each change, backs up every file it edits, and records a manifest for rollback.",
+    "developerName": "MrHashMe",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "defaultPrompt": [
+      "$efficiency-playbook:setup",
+      "$efficiency-playbook:setup rollback"
+    ]
+  }
+}
